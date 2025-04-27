@@ -6,6 +6,8 @@ import io
 import numpy as np # PaddleOCR uses numpy arrays
 from PIL import Image # To read image data
 from paddleocr import PaddleOCR # Import PaddleOCR
+import cv2 # Make sure cv2 is imported
+import traceback # Import traceback
 
 # --- Initialize PaddleOCR ---
 # Load the model once when the server starts
@@ -39,58 +41,55 @@ class ImagePayload(BaseModel):
 # --- API Endpoint ---
 @app.post("/api/recognize")
 async def recognize_image(payload: ImagePayload):
+    print("--- Backend: Received /api/recognize request ---") # Log request start
     try:
         # 1. Decode Base64 Image Data
-        # Remove the header "data:image/png;base64,"
+        print("Backend: Decoding base64 image...")
         if not payload.image or not payload.image.startswith("data:image/png;base64,"):
             raise HTTPException(status_code=400, detail="Invalid image format. Expected base64 PNG data URL.")
         
         base64_data = payload.image.split(',', 1)[1]
         image_data = base64.b64decode(base64_data)
-        # image_stream = io.BytesIO(image_data) # No longer need stream for PaddleOCR directly
+        print("Backend: Base64 decoded successfully.")
 
-        # 2. Perform OCR using PaddleOCR
-        print("Running PaddleOCR...")
-        # PaddleOCR expects image data as bytes or a numpy array
-        # Convert image bytes to numpy array
+        # 2. Convert to Image Object
+        print("Backend: Opening image with PIL...")
         img = Image.open(io.BytesIO(image_data)).convert("RGB") # Ensure image is RGB
         img_np = np.array(img)
+        print("Backend: Image converted to NumPy array.")
 
-        result = ocr_engine.ocr(img_np, cls=True) # Pass numpy array
-        print(f"PaddleOCR Raw Result: {result}")
+        # 3. Perform OCR using PaddleOCR on Original RGB Image
+        print("Backend: Running PaddleOCR on original RGB image...")
+        result = ocr_engine.ocr(img_np, cls=True) # Pass original RGB numpy array
+        print(f"Backend: PaddleOCR finished. Raw Result: {result}")
 
-        # 3. Process Results
+        # Process OCR Results
+        print("Backend: Processing OCR results...")
         recognized_texts = []
-        if result and result[0]: # Check if result is not None and contains data
+        if result and result[0]:
             for line in result[0]:
-                # line is a list containing [[box_coords], (text, confidence)]
                 if line and len(line) >= 2:
                     text_info = line[1]
                     if isinstance(text_info, (tuple, list)) and len(text_info) >= 1:
-                         recognized_texts.append(text_info[0]) # Extract the text part
+                         recognized_texts.append(text_info[0])
         
-        final_text = " ".join(recognized_texts) # Join recognized lines/words with spaces
-
-        print(f"Recognized Text: {final_text}")
+        final_text = " ".join(recognized_texts)
+        print(f"Backend: Processed Text: {final_text}")
+        print("--- Backend: Sending response ---") # Log before sending response
         return {"text": final_text if final_text else "No text recognized."}
 
     except HTTPException as http_exc:
+        print(f"Backend HTTP Exception: {http_exc.detail}") # Log HTTP exceptions
         raise http_exc
     except base64.binascii.Error:
+        print("Backend Error: Invalid base64 data.") # Log specific errors
         raise HTTPException(status_code=400, detail="Invalid base64 data.")
     except Exception as e:
-        print(f"Unexpected error during recognition: {e}")
-        # Consider logging the full traceback here for debugging
-        # import traceback
-        # traceback.print_exc()
+        print(f"Backend Unexpected Error: {e}") # Log general errors
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal server error during OCR: {e}")
 
 # --- Root endpoint for testing ---
 @app.get("/")
 async def read_root():
     return {"message": "Word4Word Backend is running with PaddleOCR"}
-
-# --- Optional: Run directly with uvicorn for simple testing (though usually run from terminal) ---
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)

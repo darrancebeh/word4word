@@ -82,14 +82,17 @@ function LandingPage() {
       return;
     }
 
+    console.log("Starting handwriting processing..."); // Added log
     setIsProcessing(true);
     setRecognizedText("Processing...");
 
     try {
       const canvas = canvasRef.current;
       const imageDataUrl = canvas.toDataURL('image/png');
+      console.log("Canvas data URL obtained."); // Added log
 
       // Send image data to the backend API (running on port 8000)
+      console.log("Sending request to backend..."); // Added log
       const response = await fetch('http://localhost:8000/api/recognize', { // Explicitly target backend URL
         method: 'POST',
         headers: {
@@ -97,21 +100,32 @@ function LandingPage() {
         },
         body: JSON.stringify({ image: imageDataUrl }),
       });
+      console.log("Received response from backend, status:", response.status); // Added log
 
       if (!response.ok) {
         // Try to parse error detail from backend, provide fallback
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown processing error' }));
-        throw new Error(`API Error (${response.status}): ${errorData.detail || 'Failed to process image'}`);
+        let errorDetail = 'Failed to process image';
+        try {
+          const errorData = await response.json();
+          errorDetail = errorData.detail || `Unknown processing error (status ${response.status})`;
+          console.error("Backend error details:", errorData); // Added log
+        } catch (jsonError) {
+          console.error("Could not parse error JSON from backend:", jsonError); // Added log
+          errorDetail = `API Error (${response.status}), could not parse error response.`;
+        }
+        throw new Error(errorDetail);
       }
 
       const result = await response.json();
+      console.log("Backend result:", result); // Added log
       setRecognizedText(result.text || "No text recognized.");
 
     } catch (error) {
-      console.error("Error processing handwriting:", error);
+      console.error("Error processing handwriting:", error); // Existing log
       // Display a user-friendly error message
       setRecognizedText(`Error: ${error instanceof Error ? error.message : 'Failed to recognize handwriting.'}`);
     } finally {
+      console.log("Finished processing, setting isProcessing to false."); // Added log
       setIsProcessing(false);
     }
   };
