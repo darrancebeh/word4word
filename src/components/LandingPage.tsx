@@ -45,7 +45,6 @@ function LandingPage() {
     if (!ctx) return;
     ctx.closePath();
     setIsDrawing(false);
-    processHandwriting();
   };
 
   const getMousePos = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -149,18 +148,30 @@ function LandingPage() {
         onTouchEnd={stopDrawing}
       />
 
-      <button
-        onClick={clearCanvas}
-        disabled={isProcessing}
-        className={`mb-6 px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        Clear Canvas
-      </button>
+      {/* Group buttons together */}
+      <div className="flex space-x-4 mb-6">
+        <button
+          onClick={clearCanvas}
+          disabled={isProcessing}
+          className={`px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Clear Canvas
+        </button>
+        {/* Add Submit button */}
+        <button
+          onClick={processHandwriting} // Call processHandwriting on click
+          disabled={isProcessing}
+          className={`px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Submit Drawing
+        </button>
+      </div>
+
 
       <div className="w-full max-w-md p-5 border border-gray-700 bg-gray-800 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold mb-3 text-white">Recognized Text:</h2>
         <div className="whitespace-pre-wrap bg-gray-700 text-gray-100 p-3 rounded min-h-[60px] break-words">
-          {recognizedText || <span className="text-gray-500">Draw on the canvas above...</span>}
+          {recognizedText || <span className="text-gray-500">Draw on the canvas above and click Submit...</span>} {/* Updated placeholder text */}
         </div>
         {recognizedText && !recognizedText.startsWith("Processing") && !recognizedText.startsWith("Error") && (
           <button
