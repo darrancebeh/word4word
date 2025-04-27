@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+python-multipart
+paddleocr
+paddlepaddle # For CPU, use paddlepaddle-gpu if you have a compatible GPU and CUDA setup
+Pillow
