@@ -3,15 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import base64
 import io
-import numpy as np # PaddleOCR uses numpy arrays
-from PIL import Image # To read image data
-from paddleocr import PaddleOCR # Import PaddleOCR
-import cv2 # Make sure cv2 is imported
-import traceback # Import traceback
+import numpy as np 
+from PIL import Image 
+from paddleocr import PaddleOCR
+import traceback
 
 # --- Initialize PaddleOCR ---
 # Load the model once when the server starts
-# Use use_gpu=False for CPU. Set to True if you have a compatible GPU and paddlepaddle-gpu installed.
 print("Initializing PaddleOCR...")
 ocr_engine = PaddleOCR(use_angle_cls=True, lang='en', use_gpu=False)
 print("PaddleOCR Initialized.")
@@ -23,7 +21,6 @@ app = FastAPI()
 origins = [
     "http://localhost:3000", # Default Next.js dev port
     "http://127.0.0.1:3000",
-    # Add your deployed frontend URL here if applicable
 ]
 
 app.add_middleware(
@@ -54,7 +51,7 @@ async def recognize_image(payload: ImagePayload):
 
         # 2. Convert to Image Object
         print("Backend: Opening image with PIL...")
-        img = Image.open(io.BytesIO(image_data)).convert("RGB") # Ensure image is RGB
+        img = Image.open(io.BytesIO(image_data)).convert("RGB") # Text will always be RGB, no ned to convert to grayscale
         img_np = np.array(img)
         print("Backend: Image converted to NumPy array.")
 

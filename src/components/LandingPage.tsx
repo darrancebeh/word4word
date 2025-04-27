@@ -143,15 +143,13 @@ function LandingPage() {
     console.log(`Feedback received: ${feedbackType}`);
     setFeedbackGiven(true);
 
-    const key = feedbackType.toLowerCase() as FeedbackKey; // Get the lowercase key and assert its type
+    const key = feedbackType.toLowerCase() as FeedbackKey;
 
     // Update counts
     setFeedbackCounts(prevCounts => ({
       ...prevCounts,
-      [key]: prevCounts[key] + 1 // Use the correctly typed key
+      [key]: prevCounts[key] + 1 
     }));
-
-    // TODO: Send feedback to backend or analytics service here
   };
 
   // --- Calculate Accuracy ---
@@ -159,7 +157,7 @@ function LandingPage() {
     const { correct, kinda, wrong } = feedbackCounts;
     const totalFeedback = correct + kinda + wrong;
     if (totalFeedback === 0) {
-      return null; // Or return 100 or 0 based on preference when no feedback is given
+      return null; 
     }
     const weightedScore = (correct * 1) + (kinda * 0.5);
     const accuracy = (weightedScore / totalFeedback) * 100;
