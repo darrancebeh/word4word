@@ -12,8 +12,9 @@ function LandingPage() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.width = 500;
-      canvas.height = 300;
+      // Set a larger base size, but the actual display size will be controlled by CSS
+      canvas.width = 800; // Larger base resolution
+      canvas.height = 400; // Larger base resolution
       const context = canvas.getContext('2d');
       if (context) {
         context.fillStyle = 'white';
@@ -144,26 +145,30 @@ function LandingPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 text-gray-300">
-      <h1 className="text-4xl font-bold mb-2 text-white">Word4Word</h1>
-      <p className="text-gray-400 mb-6">Write some stuff with your cursor/touchscreen!</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 text-gray-300">
+      <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-white">Word4Word</h1>
+      <p className="text-gray-400 mb-4 sm:mb-6 text-center">Write some stuff with your cursor/touchscreen!</p>
 
       {isProcessing && <p className="text-yellow-400 mb-4 animate-pulse">Processing your handwriting...</p>}
 
-      <canvas
-        ref={canvasRef}
-        className={`border-2 border-gray-700 bg-white rounded-lg shadow-lg mb-6 cursor-crosshair ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-      />
+      {/* Canvas Container for responsive sizing */}
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl mb-6">
+        <canvas
+          ref={canvasRef}
+          // Use Tailwind for responsive width/height and aspect ratio
+          className={`w-full aspect-[2/1] border-2 border-gray-700 bg-white rounded-lg shadow-lg cursor-crosshair ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+      </div>
 
       {/* Group buttons together */}
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-4 mb-6">
         <button
           onClick={clearCanvas}
           disabled={isProcessing}
@@ -171,9 +176,8 @@ function LandingPage() {
         >
           Clear Canvas
         </button>
-        {/* Add Submit button */}
         <button
-          onClick={processHandwriting} // Call processHandwriting on click
+          onClick={processHandwriting}
           disabled={isProcessing}
           className={`px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
@@ -181,11 +185,11 @@ function LandingPage() {
         </button>
       </div>
 
-
-      <div className="w-full max-w-md p-5 border border-gray-700 bg-gray-800 rounded-lg shadow-md">
+      {/* Results container */}
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl p-4 sm:p-5 border border-gray-700 bg-gray-800 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold mb-3 text-white">Recognized Text:</h2>
         <div className="whitespace-pre-wrap bg-gray-700 text-gray-100 p-3 rounded min-h-[60px] break-words">
-          {recognizedText || <span className="text-gray-500">Draw on the canvas above and click Submit...</span>} {/* Updated placeholder text */}
+          {recognizedText || <span className="text-gray-500">Draw on the canvas above and click Submit...</span>}
         </div>
         {recognizedText && !recognizedText.startsWith("Processing") && !recognizedText.startsWith("Error") && (
           <button
