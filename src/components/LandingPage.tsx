@@ -8,6 +8,10 @@ function LandingPage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(false); // State to track if feedback was given
+  const [feedbackCounts, setFeedbackCounts] = useState({ correct: 0, kinda: 0, wrong: 0 }); // State for feedback counts
+
+  type FeedbackKey = keyof typeof feedbackCounts; // Define type for keys
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -75,6 +79,7 @@ function LandingPage() {
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       setRecognizedText('');
+      // Don't reset counts on clear, keep session stats
     }
   };
 
@@ -86,6 +91,8 @@ function LandingPage() {
     console.log("Starting handwriting processing..."); // Added log
     setIsProcessing(true);
     setRecognizedText("Processing...");
+    setFeedbackGiven(false); // Reset feedback state on new submission
+    // Don't reset counts on submit
 
     try {
       const canvas = canvasRef.current;
@@ -131,18 +138,35 @@ function LandingPage() {
     }
   };
 
-  const copyText = () => {
-    if (recognizedText && !recognizedText.startsWith("Processing") && !recognizedText.startsWith("Error")) {
-      navigator.clipboard.writeText(recognizedText)
-        .then(() => {
-          alert('Text copied to clipboard!');
-        })
-        .catch(err => {
-          console.error('Failed to copy text: ', err);
-          alert('Failed to copy text.');
-        });
-    }
+  // --- Feedback Handlers ---
+  const handleFeedback = (feedbackType: 'Correct' | 'Kinda' | 'Wrong') => {
+    console.log(`Feedback received: ${feedbackType}`);
+    setFeedbackGiven(true);
+
+    const key = feedbackType.toLowerCase() as FeedbackKey; // Get the lowercase key and assert its type
+
+    // Update counts
+    setFeedbackCounts(prevCounts => ({
+      ...prevCounts,
+      [key]: prevCounts[key] + 1 // Use the correctly typed key
+    }));
+
+    // TODO: Send feedback to backend or analytics service here
   };
+
+  // --- Calculate Accuracy ---
+  const calculateAccuracy = () => {
+    const { correct, kinda, wrong } = feedbackCounts;
+    const totalFeedback = correct + kinda + wrong;
+    if (totalFeedback === 0) {
+      return null; // Or return 100 or 0 based on preference when no feedback is given
+    }
+    const weightedScore = (correct * 1) + (kinda * 0.5);
+    const accuracy = (weightedScore / totalFeedback) * 100;
+    return accuracy.toFixed(1); // Return accuracy rounded to one decimal place
+  };
+
+  const accuracyPercentage = calculateAccuracy();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 sm:p-6 md:p-8 text-gray-300">
@@ -186,20 +210,55 @@ function LandingPage() {
       </div>
 
       {/* Results container */}
-      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl p-4 sm:p-5 border border-gray-700 bg-gray-800 rounded-lg shadow-md">
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl p-4 sm:p-5 border border-gray-700 bg-gray-800 rounded-lg shadow-md mb-6">
         <h2 className="text-lg font-semibold mb-3 text-white">Recognized Text:</h2>
         <div className="whitespace-pre-wrap bg-gray-700 text-gray-100 p-3 rounded min-h-[60px] break-words">
           {recognizedText || <span className="text-gray-500">Draw on the canvas above and click Submit...</span>}
         </div>
-        {recognizedText && !recognizedText.startsWith("Processing") && !recognizedText.startsWith("Error") && (
-          <button
-            onClick={copyText}
-            className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-          >
-            Copy Text
-          </button>
+        {recognizedText && !isProcessing && !recognizedText.startsWith("Processing") && !recognizedText.startsWith("Error") && (
+          <div className="mt-4 flex flex-wrap justify-center items-center gap-3">
+            {!feedbackGiven ? (
+              <>
+                <span className="text-gray-400 self-center mr-2">Was this accurate?</span>
+                <button
+                  onClick={() => handleFeedback('Correct')}
+                  className="px-4 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                >
+                  Correct
+                </button>
+                <button
+                  onClick={() => handleFeedback('Kinda')}
+                  className="px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
+                >
+                  Kinda
+                </button>
+                <button
+                  onClick={() => handleFeedback('Wrong')}
+                  className="px-4 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                >
+                  Wrong
+                </button>
+              </>
+            ) : (
+              <p className="text-green-400">Thanks for your feedback!</p>
+            )}
+          </div>
         )}
       </div>
+
+      {/* --- Session Stats --- */}
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl p-3 border border-gray-700 bg-gray-800 rounded-lg shadow-md flex flex-wrap justify-around text-center text-sm">
+        <div><span className="font-semibold text-green-500">Correct:</span> {feedbackCounts.correct}</div>
+        <div><span className="font-semibold text-yellow-500">Kinda:</span> {feedbackCounts.kinda}</div>
+        <div><span className="font-semibold text-red-500">Wrong:</span> {feedbackCounts.wrong}</div>
+        {accuracyPercentage !== null && (
+          <div className="w-full mt-2 pt-2 border-t border-gray-700">
+            <span className="font-semibold text-blue-400">Session Accuracy:</span> {accuracyPercentage}%
+          </div>
+        )}
+      </div>
+      {/* --- End Session Stats --- */}
+
     </div>
   );
 }
