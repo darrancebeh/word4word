@@ -134,13 +134,20 @@ export default function Home() {
 
   const accuracyPercentage = calculateAccuracy();
 
-  // --- Combined JSX --- 
+  // --- Combined JSX ---
   return (
     <main className="flex flex-col min-h-screen bg-gray-900 text-gray-300">
       {/* LandingPage Content Area (flex-grow) */}
       <div className="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-white">Word4Word</h1>
-        <p className="text-gray-400 mb-4 sm:mb-6 text-center">Write some stuff with your cursor/touchscreen!</p>
+        <h1 className="text-4xl sm:text-5xl font-extrabold mb-2 text-center flex items-baseline gap-x-2">
+          <span>
+            Word4Word
+          </span>
+          <span className="text-lg sm:text-3xl font-normal text-gray-500">
+            by db
+          </span>
+        </h1>
+        <p className="text-gray-400 mb-4 sm:mb-6 text-center">Draw some letters or numbers with your cursor / touchscreen!</p>
 
         {isProcessing && <p className="text-yellow-400 mb-4 animate-pulse">Processing your handwriting...</p>}
 
